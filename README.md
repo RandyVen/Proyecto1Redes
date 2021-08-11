@@ -1,5 +1,7 @@
 # Proyecto1Redes
+```bash
 Proyecto que consiste en implementar un cliente que soporte el protocolo XMPP. A partir de ello soporta: Administración de cuenta-Registrar una nueva cuenta en el servidor-Iniciar sesión con una cuenta-Cerrar sesión con una cuenta-Eliminar la cuenta del servidor
+```
 #Requerimientos
 pip install sleekxmpp==1.3.3
 pip install pyasn1==0.3.6 pyasn1-modules==0.1.5
