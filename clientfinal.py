@@ -154,7 +154,7 @@ class Client(ClientXMPP):
     # Para crear y unirse a un room
     # Diferencia con joinRoom es la afiliacion para ser administrador y desbloquear el room para que cualquier usuario pueda ingresar
     def createRoom(self, room, nick):
-        status = "Hello"
+        status = "Activo"
         print("Te vas a unir al room ")
         self.plugin['xep_0045'].joinMUC(room+'@conference.alumchat.xyz', nick, pstatus=status, pfrom=self.boundjid.full, wait=True)
         self.nick = nick
@@ -186,4 +186,81 @@ class Client(ClientXMPP):
             self.send_message(mto=jid+'@alumchat.xyz',mbody=message, mfrom=self.boundjid.user, mtype='chat')
             print("Mensaje enviado a: "+jid)
         except IqError:
-            print("No response from server.")
+            print("No hay respuesta del server.")
+
+     # Metodo para borrar cuenta del servidor
+    def unregister(self):
+        iq = self.make_iq_set(ito='alumchat.xyz', ifrom=self.boundjid.user)
+        item = ET.fromstring("<query xmlns='jabber:iq:register'> \
+                                        <remove/> \
+                                    </query>")
+        iq.append(item)
+        res = iq.send()
+        if res['type'] == 'result':
+            print("Cuenta eliminada")
+
+    # Metodo para enviar un archivo por medio de base64
+    def sendFile(self, path, to):
+        with open(path,'rb') as img:
+            file_ = base64.b64encode(img.read()).decode('utf-8')
+
+        self.send_message(mto=to+'@alumchat.xyz', mbody=file_, msubject='send_file', mtype='chat')
+
+    # Metodo para obtener un usuario en especifico
+    def getUser(self, username):
+        print("== Contacto a buscar ==")
+        print('Esperando...\n')
+        proof = False
+        self.presences_received.wait(1) #Para evitar problemas de concurrencia
+        groups = self.client_roster.groups() #Para obtener los diferentes tipos de grupos del server
+        t2 = PrettyTable(['Username','Subscription','Status'])
+        for group in groups:
+            for jid in groups[group]:
+                temp = []
+                sub = self.client_roster[jid]['subscription']           
+                temp.append(jid)
+                temp.append(sub)
+
+                connections = self.client_roster.presence(jid)
+                for res, pres in connections.items():
+                    show = 'chat'
+                    if pres['show']:
+                        show = pres['show']
+                    temp.append(show)
+                if len(temp) == 2: # Para validar que si no tiene estado de available, se ponga away
+                    temp.append('away')
+                if str(jid) == username+"@alumchat.xyz": #Valida que sea el usuario solicitado
+                    proof = True
+                    t2.add_row(temp)
+        #Si el usuario esta disponible muestra la tabla, sino muestra mensaje de usuario no encontrado
+        if proof:
+            print(t2)
+        else:
+            print("No se encontro al usuario")
+
+
+    # Metodo para obtener usuarios del server y del roster
+    def getUsers(self):
+        iq = self.Iq()
+        iq['type'] = 'set'
+        iq['id'] = 'search_result'
+        iq['to'] = 'search.alumchat.xyz'
+        #Stanzas de query para obtener usaurios del server
+        item = ET.fromstring("<query xmlns='jabber:iq:search'> \
+                                <x xmlns='jabber:x:data' type='submit'> \
+                                    <field type='hidden' var='FORM_TYPE'> \
+                                        <value>jabber:iq:search</value> \
+                                    </field> \
+                                    <field var='Username'> \
+                                        <value>1</value> \
+                                    </field> \
+                                    <field var='search'> \
+                                        <value>*</value> \
+                                    </field> \
+                                </x> \
+                              </query>")
+        iq.append(item)
+        res = iq.send()
+        data = []
+        temp = []
+        cont = 0
