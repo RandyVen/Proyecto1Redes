@@ -15,3 +15,6 @@ Correr menufinal.py
 AL empezar el programa tendra que elegir un numero del menu 
 Al principio solo se le enseñará el menú de Registro, login o salir.
 La mayoría de veces se mueve por medio de los numeros que aparecen en el menú
+
+## Recomendaciones
+Abrir una consola distinta a la de visual studio code al correr el menufinal.py ya que puede dar errores
