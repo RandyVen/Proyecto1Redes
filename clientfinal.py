@@ -264,3 +264,55 @@ class Client(ClientXMPP):
         data = []
         temp = []
         cont = 0
+        # PAra rellenar la informacion si hace falta, y appendear en array para mostrar en tabla
+        for i in res.findall('.//{jabber:x:data}value'):
+            cont += 1
+            txt = ''
+            if i.text == None:
+                txt = '--'
+            else:
+                txt = i.text
+
+            temp.append(txt)
+            if cont == 4:
+                cont = 0
+                data.append(temp)
+                temp = []
+
+        t = PrettyTable(['Email', 'JID', 'Username', 'Name'])
+        for i in data:
+            t.add_row(i)
+        print(t)
+
+        # Muestra lista de contactos del roster
+        print("== Lista de Contactos ==")
+        print('Esperando...\n')
+        self.presences_received.wait(1) #Para la concurrencia
+        groups = self.client_roster.groups() #Obtener los diferentes grupos del server
+        t2 = PrettyTable(['Username','Subscription','Status'])
+        for group in groups:
+            for jid in groups[group]:
+                temp = []
+                sub = self.client_roster[jid]['subscription']           
+                temp.append(jid)
+                temp.append(sub)
+
+                connections = self.client_roster.presence(jid)
+                for res, pres in connections.items():
+                    show = 'available'
+                    if pres['show']:
+                        show = pres['show']
+                    temp.append(show)
+                if len(temp) == 2:
+                    temp.append('unavailable')
+                if str(jid) != str(self.boundjid.bare) and str(jid).find('@conference.alumchat.xyz') == -1:
+                    t2.add_row(temp)
+        print(t2)
+            
+# Para saber cuantas entradas he recibido de presencia
+def wait_for_presences(self, pres):
+        self.received.add(pres['from'].bare)
+        if len(self.received) >= len(self.client_roster.keys()):
+            self.presences_received.set()
+        else:
+            self.presences_received.clear()
